@@ -20,6 +20,32 @@ class Player(models.Model):
     def __str__(self):
         return f"{self.user.username} in {self.game.name}"
 
+
+class DiceRoll(models.Model):
+    game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name="dice_rolls")
+    player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="dice_rolls", null=True, blank=True)
+
+    die1 = models.PositiveSmallIntegerField()
+    die2 = models.PositiveSmallIntegerField()
+
+    total = models.PositiveSmallIntegerField(editable=False)
+    is_double = models.BooleanField(editable=False)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["created_at"]
+
+    def save(self, *args, **kwargs):
+        self.total = self.die1 + self.die2
+        self.is_double = (self.die1 == self.die2)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        player_repr = self.player.user.username if self.player and self.player.user_id else "—"
+        return f"{player_repr} rolled {self.die1},{self.die2} (total={self.total})"
+
+
 class Transaction(models.Model):
     game = models.ForeignKey(Game, on_delete=models.CASCADE, related_name="transactions")
     player = models.ForeignKey(Player, on_delete=models.CASCADE, related_name="transactions")
